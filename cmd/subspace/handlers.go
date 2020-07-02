@@ -414,7 +414,7 @@ func profileAddHandler(w *Web) {
 	}
 	_, ipv4Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv4Gw, ipv4Cidr))
 	if err != nil {
-		logger.Error("Invalid network address: %s/%s", ipv4Gw, ipv4Cidr)
+		logger.Errorf("Invalid network address: %s/%s", ipv4Gw, ipv4Cidr)
 		w.Redirect("/?error=addprofile")
 		return
 	}
@@ -428,13 +428,13 @@ func profileAddHandler(w *Web) {
 	}
 	_, ipv6Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv6Gw, ipv6Cidr))
 	if err != nil {
-		logger.Error("Invalid network address: %s/%s", ipv6Gw, ipv6Cidr)
+		logger.Errorf("Invalid network address: %s/%s", ipv6Gw, ipv6Cidr)
 		w.Redirect("/?error=addprofile")
 		return
 	}
 	ipv4Addr, ipv6Addr, err := util.GenerateIPAddr(ipv4Network, ipv6Network, uint32(profile.Number))
 	if err != nil {
-		logger.Error("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
+		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
 		w.Redirect("/?error=addprofile")
 		return
 	}
