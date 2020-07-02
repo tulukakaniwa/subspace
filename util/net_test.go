@@ -2,7 +2,7 @@ package util
 
 import (
 	"net"
-	"testing" // テストで使える関数・構造体が用意されているパッケージをimport
+	"testing"
 )
 
 func TestCalcDefaultGatewayV6(t *testing.T) {
