@@ -29,7 +29,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN chmod +x /usr/bin/subspace /usr/local/bin/entrypoint.sh /sbin/my_init
 
-RUN apk add --no-cache \
+RUN apk add --no-cacahe \
     iproute2 \
     iptables \
     ip6tables \

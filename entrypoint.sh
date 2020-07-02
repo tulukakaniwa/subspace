@@ -47,13 +47,10 @@ fi
 export DEBIAN_FRONTEND="noninteractive"
 
 if [ -z "${SUBSPACE_IPV4_GW-}" ]; then
-  export SUBSPACE_IPV4_PREF=$(echo ${SUBSPACE_IPV4_POOL-} | cut -d '/' -f1 | sed 's/.0$/./g')
-  export SUBSPACE_IPV4_GW=$(echo ${SUBSPACE_IPV4_PREF-}1)
-
+  export SUBSPACE_IPV4_GW=$(calc-default-gateway "${SUBSPACE_IPV4_POOL-}")
 fi
 if [ -z "${SUBSPACE_IPV6_GW-}" ]; then
-  export SUBSPACE_IPV6_PREF=$(echo ${SUBSPACE_IPV6_POOL-} | cut -d '/' -f1 | sed 's/:0$/:/g')
-  export SUBSPACE_IPV6_GW=$(echo ${SUBSPACE_IPV6_PREF-}1)
+  export SUBSPACE_IPV6_GW=$(calc-default-gateway "${SUBSPACE_IPV6_POOL-}")
 fi
 
 if [ -z "${SUBSPACE_IPV6_NAT_ENABLED-}" ]; then
