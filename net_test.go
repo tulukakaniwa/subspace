@@ -25,4 +25,12 @@ func TestGenerateIPAddr(t *testing.T) {
 	if err == nil {
 		t.Errorf("%s contain only 255 valid v6 address, but got: %s", v6Net.String(), ipv6.String())
 	}
+
+	_, v4Net, _ = net.ParseCIDR("127.10.10.128/25")
+	_, v6Net, _ = net.ParseCIDR("fe80::/64")
+	ipv4, _, err := generateIPAddr(v4Net, v6Net, 129)
+	if err == nil {
+		t.Errorf("%s contain only 126 valid v4 address, but got: %s", v4Net.String(), ipv4.String())
+	}
+
 }
