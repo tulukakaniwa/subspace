@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/png"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -21,7 +22,7 @@ var (
 	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
 	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
-	maxProfiles        = 250
+	maxProfilesPerUser = 10
 )
 
 func getEnv(key, fallback string) string {
@@ -403,10 +404,6 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Pref := "10.99.97."
-	if pref := getEnv("SUBSPACE_IPV4_PREF", "nil"); pref != "nil" {
-		ipv4Pref = pref
-	}
 	ipv4Gw := "10.99.97.1"
 	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
 		ipv4Gw = gw
@@ -415,9 +412,11 @@ func profileAddHandler(w *Web) {
 	if cidr := getEnv("SUBSPACE_IPV4_CIDR", "nil"); cidr != "nil" {
 		ipv4Cidr = cidr
 	}
-	ipv6Pref := "fd00::10:97:"
-	if pref := getEnv("SUBSPACE_IPV6_PREF", "nil"); pref != "nil" {
-		ipv6Pref = pref
+	_, ipv4Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv4Gw, ipv4Cidr))
+	if err != nil {
+		logger.Error("Invalid network address: %s/%s", ipv4Gw, ipv4Cidr)
+		w.Redirect("/?error=addprofile")
+		return
 	}
 	ipv6Gw := "fd00::10:97:1"
 	if gw := getEnv("SUBSPACE_IPV6_GW", "nil"); gw != "nil" {
@@ -427,6 +426,19 @@ func profileAddHandler(w *Web) {
 	if cidr := getEnv("SUBSPACE_IPV6_CIDR", "nil"); cidr != "nil" {
 		ipv6Cidr = cidr
 	}
+	_, ipv6Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv6Gw, ipv6Cidr))
+	if err != nil {
+		logger.Error("Invalid network address: %s/%s", ipv6Gw, ipv6Cidr)
+		w.Redirect("/?error=addprofile")
+		return
+	}
+	ipv4Addr, ipv6Addr, err := util.GenerateIPAddr(ipv4Network, ipv6Network, uint32(profile.Number))
+	if err != nil {
+		logger.Error("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
+		w.Redirect("/?error=addprofile")
+		return
+	}
+
 	listenport := "51820"
 	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
 		listenport = port
@@ -445,19 +457,19 @@ cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 
 cat <<WGPEER >peers/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
-AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+AllowedIPs = {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 WGPEER
 
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
 DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
-Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}
+Address = {{$.IPv4Addr}}/{{$.IPv4Cidr}},{{$.IPv6Addr}}/{{$.IPv6Cidr}}
 
 [Peer]
 PublicKey = $(cat server.public)
@@ -472,8 +484,8 @@ WGCLIENT
 		Datadir      string
 		IPv4Gw       string
 		IPv6Gw       string
-		IPv4Pref     string
-		IPv6Pref     string
+		IPv4Addr     string
+		IPv6Addr     string
 		IPv4Cidr     string
 		IPv6Cidr     string
 		Listenport   string
@@ -484,8 +496,8 @@ WGCLIENT
 		datadir,
 		ipv4Gw,
 		ipv6Gw,
-		ipv4Pref,
-		ipv6Pref,
+		ipv4Addr.String(),
+		ipv6Addr.String(),
 		ipv4Cidr,
 		ipv6Cidr,
 		listenport,
