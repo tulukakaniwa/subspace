@@ -7,8 +7,8 @@ import (
 
 func TestCalcDefaultGatewayV6(t *testing.T) {
 	{
-		cidr := "fc00:1234:1234:1234::/64"
-		gw := "fc00:1234:1234:1234::1"
+		cidr := "fe80:1234:1234:1234::/64"
+		gw := "fe80:1234:1234:1234::1"
 		ip, err := CalcDefaultGateway(cidr)
 		if err != nil {
 			t.Error(err)
@@ -18,7 +18,7 @@ func TestCalcDefaultGatewayV6(t *testing.T) {
 		}
 	}
 	{
-		cidr := "fc00:1234:1234:1234::/128"
+		cidr := "fe80:1234:1234:1234::/128"
 		ip, err := CalcDefaultGateway(cidr)
 		if err == nil {
 			t.Errorf("There should not be default GW for %s, but got %s", cidr, ip.String())
@@ -49,7 +49,7 @@ func TestCalcDefaultGatewayV4(t *testing.T) {
 
 func TestGenerateIPAddr(t *testing.T) {
 	_, v4Net, _ := net.ParseCIDR("127.10.0.0/16")
-	_, v6Net, _ := net.ParseCIDR("fc80::/112")
+	_, v6Net, _ := net.ParseCIDR("fe80::/112")
 	{
 		ipv4, ipv6, err := GenerateIPAddr(v4Net, v6Net, 100)
 		if err != nil {
