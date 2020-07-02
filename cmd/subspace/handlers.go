@@ -432,7 +432,7 @@ func profileAddHandler(w *Web) {
 		w.Redirect("/?error=addprofile")
 		return
 	}
-	ipv4Addr, ipv6Addr, err := util.GenerateIPAddr(ipv4Network, ipv6Network, uint32(profile.Number))
+	ipv4Addr, ipv6Addr, err := generateIPAddr(ipv4Network, ipv6Network, uint32(profile.Number))
 	if err != nil {
 		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
 		w.Redirect("/?error=addprofile")

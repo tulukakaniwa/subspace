@@ -3,10 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
-
-	"github.com/subspacecommunity/subspace/util"
 )
 
 var help *bool = flag.Bool("h", false, "show help and exit")
@@ -34,10 +33,23 @@ func main() {
 		os.Exit(-1)
 	}
 	cidr := flag.Arg(0)
-	gw, err := util.CalcDefaultGateway(cidr)
+	gw, err := calcDefaultGateway(cidr)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to calc default gw: %v\n", err)
 		os.Exit(-1)
 	}
 	fmt.Printf("%s\n", gw.String())
+}
+
+func calcDefaultGateway(cidr string) (net.IP, error) {
+	_, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, err
+	}
+	if ones, bits := network.Mask.Size(); bits-ones == 0 {
+		return nil, fmt.Errorf("given CIDR (%s) doet not represent a network", cidr)
+	}
+	netIP := network.IP[:]
+	netIP[len(netIP)-1] |= 1
+	return netIP, nil
 }
