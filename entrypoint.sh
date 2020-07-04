@@ -117,13 +117,13 @@ exec /usr/bin/subspace \
     "--http-insecure=${SUBSPACE_HTTP_INSECURE}" \
     "--backlink=${SUBSPACE_BACKLINK}" \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
-    "--theme=${SUBSPACE_THEME}"
-    "--setup-network=true"
-    "--enable-dnsmasq=true"
-    "--nameserver=${SUBSPACE_NAMESERVER}"
-    "--listen-port=${SUBSPACE_LISTENPORT}"
-    "--network-ipv4=${SUBSPACE_NETWORK_IPV4}"
-    "--network-ipv6=${SUBSPACE_NETWORK_IPV6}"
+    "--theme=${SUBSPACE_THEME}" \
+    "--setup-network=true" \
+    "--enable-dnsmasq=true" \
+    "--nameserver=${SUBSPACE_NAMESERVER}" \
+    "--listen-port=${SUBSPACE_LISTENPORT}" \
+    "--network-ipv4=${SUBSPACE_NETWORK_IPV4}" \
+    "--network-ipv6=${SUBSPACE_NETWORK_IPV6}" \
     "--enable-ipv6-nat=${SUBSPACE_IPV6_NAT_ENABLED}"
 RUNIT
   chmod +x /etc/service/subspace/run
