@@ -87,6 +87,9 @@ var (
 	// Enable network configuration by subspace
 	enableNetworkSetup bool
 
+	// Enable dnsmasq
+	enableDnsmasq bool
+
 	// Nameserver
 	nameserver string
 
@@ -115,6 +118,7 @@ func init() {
 	cli.BoolVar(&debug, "debug", false, "debug mode")
 	cli.StringVar(&semanticTheme, "theme", "green", "Semantic-ui theme to use")
 	cli.BoolVar(&enableNetworkSetup, "configure-network", false, "Configure networks automatically by subspace")
+	cli.BoolVar(&enableDnsmasq, "enable-dnsmasq", false, "Use dnsmasq")
 	cli.StringVar(&nameserver, "nameserver", "1.1.1.1", "DNS server used by clients")
 	cli.StringVar(&networkIPv4, "network-ipv4", "10.99.97.0/24", "IPV4 network address to create. First one is reserved by server.")
 	cli.StringVar(&networkIPv6, "network-ipv6", "fd00::10:97:0/64", "IPV6 network address to create. First one is reserved by server.")

@@ -38,6 +38,7 @@ func configureWireguard() (string, error) {
 		GatewayIPv6 string
 		GatewayIPv4WithCIDR string
 		GatewayIPv6WithCIDR string
+		DnsmasqEnabled bool
 	}
 	maskLenIPv4, _ := wireguardConfig.networkIPv4.Mask.Size()
 	maskLenIPv6, _ := wireguardConfig.networkIPv6.Mask.Size()
@@ -50,6 +51,7 @@ func configureWireguard() (string, error) {
 		GatewayIPv6:         wireguardConfig.gatewayIPv6.String(),
 		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv4.String(), maskLenIPv4),
 		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv6.String(), maskLenIPv6),
+		DnsmasqEnabled: enableDnsmasq,
 	}
 	return bash(`
 # Set DNS server
@@ -107,9 +109,10 @@ ip addr add "{{.GatewayIPv6WithCIDR}}" dev wg0
 wg setconf wg0 /data/wireguard/server.conf
 ip link set wg0 up
 
+{{if .DnsmasqEnabled}}
 # Reload dnsmasq
 sed -i -e 's/listen-address=.\+$/listen-address=127.0.0.1,{{.GatewayIPv4}},{{.GatewayIPv6}}/g' /etc/dnsmasq.conf
 sv restart dnsmasq
-
+{{end}}
 `, &v)
 }

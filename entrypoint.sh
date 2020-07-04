@@ -119,6 +119,7 @@ exec /usr/bin/subspace \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
     "--theme=${SUBSPACE_THEME}"
     "--setup-network=true"
+    "--enable-dnsmasq=true"
     "--nameserver=${SUBSPACE_NAMESERVER}"
     "--listen-port=${SUBSPACE_LISTENPORT}"
     "--network-ipv4=${SUBSPACE_NETWORK_IPV4}"
