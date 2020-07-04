@@ -43,7 +43,7 @@ func TestCalcDefaultGatewayV6(t *testing.T) {
 			t.Error(err)
 		}
 		if !ip.Equal(net.ParseIP(gw)) {
-			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+			t.Errorf("Default gateway of %s must be %s, but got %s (in %s)", cidr, gw, ip.String(), network.String())
 		}
 	}
 	{
@@ -63,7 +63,7 @@ func TestCalcDefaultGatewayV4(t *testing.T) {
 			t.Error(err)
 		}
 		if !ip.Equal(net.ParseIP(gw)) {
-			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+			t.Errorf("Default gateway of %s must be %s, but got %s (in %s)", cidr, gw, ip.String(), network.String())
 		}
 	}
 	{
