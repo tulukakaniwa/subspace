@@ -83,6 +83,24 @@ var (
 
 	// Totp
 	tempTotpKey *otp.Key
+
+	// Enable network configuration by subspace
+	enableNetworkSetup bool
+
+	// Nameserver
+	nameserver string
+
+	// IPV4 CIDR
+	networkIPv4 string
+
+	// IPV6 CIDR
+	networkIPv6 string
+
+	// Listen port
+	listenPort uint
+
+	// Use IPv6 NAT
+	ipv6NatEnabled bool
 )
 
 func init() {
@@ -96,6 +114,12 @@ func init() {
 	cli.BoolVar(&showHelp, "help", false, "display help and exit")
 	cli.BoolVar(&debug, "debug", false, "debug mode")
 	cli.StringVar(&semanticTheme, "theme", "green", "Semantic-ui theme to use")
+	cli.BoolVar(&enableNetworkSetup, "configure-network", false, "Configure networks automatically by subspace")
+	cli.StringVar(&nameserver, "nameserver", "1.1.1.1", "DNS server used by clients")
+	cli.StringVar(&networkIPv4, "network-ipv4", "10.99.97.0/24", "IPV4 network address to create. First one is reserved by server.")
+	cli.StringVar(&networkIPv6, "network-ipv6", "fd00::10:97:0/64", "IPV6 network address to create. First one is reserved by server.")
+	cli.UintVar(&listenPort, "listen-port", 51820, "UDP port number wor wireguard device to listen")
+	cli.BoolVar(&ipv6NatEnabled, "enable-ipv6-nat", true, "Use IPv6 NAT feature or not")
 }
 
 func main() {
@@ -152,6 +176,15 @@ func main() {
 	err = config.GenerateTOTP()
 	if err != nil {
 		logger.Fatal(err)
+	}
+	//
+	// Setup wireguard
+	//
+	if err := initWireguardConfig(); err != nil {
+		logger.Fatal(err)
+	}
+	if msg, err := configureWireguard(); err != nil {
+		logger.Fatalf("%v: \n -- msg -- \n%s", err, msg)
 	}
 
 	// Secure token

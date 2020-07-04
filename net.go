@@ -11,6 +11,19 @@ func cloneIP(ip net.IP) net.IP {
 	return dup
 }
 
+func calcDefaultGateway(cidr string) (net.IP, *net.IPNet, error) {
+	_, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ones, bits := network.Mask.Size(); bits-ones == 0 {
+		return nil, nil, fmt.Errorf("given CIDR (%s) doet not represent a network", cidr)
+	}
+	gwIP := cloneIP(network.IP)
+	gwIP[len(gwIP)-1] |= 1
+	return gwIP, network, nil
+}
+
 func generateIPAddr(v4Net *net.IPNet, v6Net *net.IPNet, id uint32) (net.IP, net.IP, error) {
 	v4 := cloneIP(v4Net.IP)
 	v6 := cloneIP(v6Net.IP)

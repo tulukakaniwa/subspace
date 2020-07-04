@@ -16,8 +16,7 @@ func TestGenerateIPAddr(t *testing.T) {
 		if expected := "127.10.0.100"; ipv4.String() != expected {
 			t.Errorf("Failed to generate IPv4: %s(expected) != %s(actual)", ipv4.String(), expected)
 		}
-		// FIXME(ledyba-z): there is no way to suppress sonar cloud warnings for IPv6.
-		if expected := "fe80:" + ":100"; ipv6.String() != expected {
+		if expected := "fe80::100"; ipv6.String() != expected {
 			t.Errorf("Failed to generate IPv6: %s(expected) != %s(actual)", ipv6.String(), expected)
 		}
 	}
@@ -33,4 +32,45 @@ func TestGenerateIPAddr(t *testing.T) {
 		t.Errorf("%s contain only 126 valid v4 address, but got: %s", v4Net.String(), ipv4.String())
 	}
 
+}
+
+func TestCalcDefaultGatewayV6(t *testing.T) {
+	{
+		cidr := "fe80:1234:1234:1234::/64"
+		gw := "fe80:1234:1234:1234::1"
+		ip, network, err := calcDefaultGateway(cidr)
+		if err != nil {
+			t.Error(err)
+		}
+		if !ip.Equal(net.ParseIP(gw)) {
+			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+		}
+	}
+	{
+		cidr := "fe80:1234:1234:1234::/128"
+		ip, network, err := calcDefaultGateway(cidr)
+		if err == nil {
+			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+		}
+	}
+}
+func TestCalcDefaultGatewayV4(t *testing.T) {
+	{
+		cidr := "127.168.128.0/18"
+		gw := "127.168.128.1"
+		ip, network, err := calcDefaultGateway(cidr)
+		if err != nil {
+			t.Error(err)
+		}
+		if !ip.Equal(net.ParseIP(gw)) {
+			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+		}
+	}
+	{
+		cidr := "127.168.128.0/32"
+		ip, network, err := calcDefaultGateway(cidr)
+		if err == nil {
+			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+		}
+	}
 }
