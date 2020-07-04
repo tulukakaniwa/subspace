@@ -84,19 +84,19 @@ fi
 {{end}}
 
 # ipv4 - DNS Leak Protection
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GwAddressIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GwAddressIPv4}}:53"
+if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
+  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
 fi
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GwAddressIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GwAddressIPv4}}:53"
+if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
+  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
 fi
 
 # ipv6 - DNS Leak Protection
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GwAddressIPv6}}"; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GwAddressIPv6}}"
+if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
+  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
 fi
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GwAddressIPv6}}"; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GwAddressIPv6}}"
+if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
+  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
 fi
 
 # Create wireguard device
