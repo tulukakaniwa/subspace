@@ -80,7 +80,7 @@ cat /data/wireguard/peers/*.conf >>/data/wireguard/server.conf
 if ! test -d /etc/service/dnsmasq; then
   cat <<DNSMASQ >/etc/dnsmasq.conf
     # Only listen on necessary addresses.
-    listen-address=127.0.0.1,${SUBSPACE_IPV4_GW},${SUBSPACE_IPV6_GW}
+    listen-address=127.0.0.1
 
     # Never forward plain names (without a dot or domain part)
     domain-needed

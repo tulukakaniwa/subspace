@@ -107,6 +107,9 @@ ip addr add "{{.GatewayIPv6WithCIDR}}" dev wg0
 wg setconf wg0 /data/wireguard/server.conf
 ip link set wg0 up
 
+# Reload dnsmasq
+sed -i -e 's/listen-address=.\+$/listen-address=127.0.0.1,{{.GatewayIPv4}},{{.GatewayIPv6}}/g' /etc/dnsmasq.conf
+sv restart dnsmasq
 
 `, &v)
 }
