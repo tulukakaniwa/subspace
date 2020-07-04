@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/png"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -24,13 +23,6 @@ var (
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
 	maxProfilesPerUser = 10
 )
-
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
 
 func ssoHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if token := samlSP.GetAuthorizationToken(r); token != nil {
@@ -404,52 +396,16 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Gw := "10.99.97.1"
-	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
-		ipv4Gw = gw
-	}
-	ipv4Cidr := "24"
-	if cidr := getEnv("SUBSPACE_IPV4_CIDR", "nil"); cidr != "nil" {
-		ipv4Cidr = cidr
-	}
-	_, ipv4Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv4Gw, ipv4Cidr))
-	if err != nil {
-		logger.Errorf("Invalid network address: %s/%s", ipv4Gw, ipv4Cidr)
-		w.Redirect("/?error=addprofile")
-		return
-	}
-	ipv6Gw := "fd00::10:97:1"
-	if gw := getEnv("SUBSPACE_IPV6_GW", "nil"); gw != "nil" {
-		ipv6Gw = gw
-	}
-	ipv6Cidr := "64"
-	if cidr := getEnv("SUBSPACE_IPV6_CIDR", "nil"); cidr != "nil" {
-		ipv6Cidr = cidr
-	}
-	_, ipv6Network, err := net.ParseCIDR(fmt.Sprintf("%s/%s", ipv6Gw, ipv6Cidr))
-	if err != nil {
-		logger.Errorf("Invalid network address: %s/%s", ipv6Gw, ipv6Cidr)
-		w.Redirect("/?error=addprofile")
-		return
-	}
-	ipv4Addr, ipv6Addr, err := generateIPAddr(ipv4Network, ipv6Network, uint32(profile.Number))
+	ipv4Addr, ipv6Addr, err := generateIPAddr(wireguardConfig.networkIPv4, wireguardConfig.networkIPv6, uint32(profile.Number))
 	if err != nil {
 		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
 		w.Redirect("/?error=addprofile")
 		return
 	}
 
-	listenport := "51820"
-	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
-		listenport = port
-	}
-	endpointHost := httpHost
-	if eh := getEnv("SUBSPACE_ENDPOINT_HOST", "nil"); eh != "nil" {
-		endpointHost = eh
-	}
-	allowedips := "0.0.0.0/0, ::/0"
-	if ips := getEnv("SUBSPACE_ALLOWED_IPS", "nil"); ips != "nil" {
-		allowedips = ips
+	endpoint := endpointHost
+	if endpointHost == "" {
+		endpoint = httpHost
 	}
 
 	script := `
@@ -488,20 +444,20 @@ WGCLIENT
 		IPv6Addr     string
 		IPv4Cidr     string
 		IPv6Cidr     string
-		Listenport   string
+		Listenport   uint
 		AllowedIPS   string
 	}{
 		profile,
-		endpointHost,
+		endpoint,
 		datadir,
-		ipv4Gw,
-		ipv6Gw,
+		wireguardConfig.gatewayIPv4.String(),
+		wireguardConfig.gatewayIPv6.String(),
 		ipv4Addr.String(),
 		ipv6Addr.String(),
-		ipv4Cidr,
-		ipv6Cidr,
-		listenport,
-		allowedips,
+		wireguardConfig.gatewayIPv4.String(),
+		wireguardConfig.gatewayIPv6.String(),
+		listenPort,
+		allowedIPs,
 	})
 	if err != nil {
 		logger.Warn(err)

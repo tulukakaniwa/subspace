@@ -38,6 +38,14 @@ if [ -z "${SUBSPACE_LISTENPORT-}" ]; then
   export SUBSPACE_LISTENPORT="51820"
 fi
 
+if [ -z "${SUBSPACE_ENDPOINT_HOST-}" ]; then
+  export SUBSPACE_ENDPOINT_HOST="" # Use default values defined in subspace command
+fi
+
+if [ -z "${SUBSPACE_ALLOWED_IPS-}" ]; then
+  export SUBSPACE_ALLOWED_IPS="" # Use default values defined in subspace command
+fi
+
 if [ -z "${SUBSPACE_HTTP_INSECURE-}" ]; then
   export SUBSPACE_HTTP_INSECURE="false"
 fi
@@ -122,8 +130,10 @@ exec /usr/bin/subspace \
     "--enable-dnsmasq=true" \
     "--nameserver=${SUBSPACE_NAMESERVER}" \
     "--listen-port=${SUBSPACE_LISTENPORT}" \
+    "--endpoint-host=${SUBSPACE_ENDPOINT_HOST}" \
     "--network-ipv4=${SUBSPACE_NETWORK_IPV4}" \
     "--network-ipv6=${SUBSPACE_NETWORK_IPV6}" \
+    "--allowed-ips=${SUBSPACE_ALLOWED_IPS}" \
     "--enable-ipv6-nat=${SUBSPACE_IPV6_NAT_ENABLED}"
 RUNIT
   chmod +x /etc/service/subspace/run
