@@ -118,7 +118,7 @@ exec /usr/bin/subspace \
     "--backlink=${SUBSPACE_BACKLINK}" \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
     "--theme=${SUBSPACE_THEME}" \
-    "--setup-network=true" \
+    "--configure-network=true" \
     "--enable-dnsmasq=true" \
     "--nameserver=${SUBSPACE_NAMESERVER}" \
     "--listen-port=${SUBSPACE_LISTENPORT}" \
