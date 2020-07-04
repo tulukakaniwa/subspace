@@ -18,7 +18,7 @@ if [ -z "${SUBSPACE_NETWORK_IPV4-}" ]; then
   export SUBSPACE_NETWORK_IPV4="10.99.97.0/24"
 fi
 
-if [ -z "${SUBSPACE_NETWORK_IPV4-}" ]; then
+if [ -z "${SUBSPACE_NETWORK_IPV6-}" ]; then
   export SUBSPACE_NETWORK_IPV6="fd00::10:97:0/64"
 fi
 
