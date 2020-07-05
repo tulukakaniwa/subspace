@@ -171,20 +171,24 @@ docker create \
     --network host \
     --cap-add NET_ADMIN \
     --volume /data:/data \
-    --env SUBSPACE_HTTP_HOST="subspace.example.com" \
-	# Optional variable to change upstream DNS provider
-    --env SUBSPACE_NAMESERVER="1.1.1.1" \
-	# Optional variable to change WireGuard Listenport
-    --env SUBSPACE_LISTENPORT="51820" \
-    --env SUBSPACE_ENDPOINT_HOST="you-can-use-another-hostname.subspace.example.com" \
+    --env 'SUBSPACE_HTTP_HOST=subspace.example.com' \
+	  # Optional variable to change upstream DNS provider
+    --env 'SUBSPACE_NAMESERVER=1.1.1.1' \
+	  # Optional variable to change WireGuard Listenport
+    --env 'SUBSPACE_LISTENPORT=51820' \
+    # Optinal variable to change the page to set the home button
+    --env 'SUBSPACE_BACKLINK=/'
+    # Optional variable to change the hostname of WireGuard's hostname
+    --env 'SUBSPACE_ENDPOINT_HOST=you-can-use-another-hostname.subspace.example.com' \
     # Optional variables to change IPv4/v6 prefixes
-    --env SUBSPACE_NETWORK_IPV4="10.99.97.0/24" \
-    --env SUBSPACE_NETWORK_IPV6="fd00::10:97:0/64" \
-	# Optional variables to change IPv4/v6 Gateway
-    --env SUBSPACE_IPV4_GW="10.99.97.1" \
-    --env SUBSPACE_IPV6_GW="fd00::10:97:1" \
+    --env 'SUBSPACE_NETWORK_IPV4=10.99.97.0/24' \
+    --env 'SUBSPACE_NETWORK_IPV6=fd00::10:97:0/64' \
 	# Optional variable to enable or disable IPv6 NAT
-    --env SUBSPACE_IPV6_NAT_ENABLED=1 \
+    --env 'SUBSPACE_IPV6_NAT_ENABLED=1' \
+	# Optional variable to enable or disable dnsmasq
+    --env 'SUBSPACE_DNSMASQ_ENABLED=1' \
+  # Optional variable to change the theme color
+    --env 'SUBSPACE_THEME=green' \
     subspacecommunity/subspace:latest
 
 $ sudo docker start subspace
@@ -207,16 +211,20 @@ services:
     - /opt/docker/subspace:/data
    restart: always
    environment:
-    - SUBSPACE_HTTP_HOST=subspace.example.org
-    - SUBSPACE_LETSENCRYPT=true
-    - SUBSPACE_HTTP_INSECURE=false
-    - SUBSPACE_HTTP_ADDR=":80"
-    - SUBSPACE_NAMESERVER=1.1.1.1
-    - SUBSPACE_LISTENPORT=51820
-    - SUBSPACE_ENDPOINT_HOST=you-can-use-another-hostname.subspace.example.com
-    - SUBSPACE_NETWORK_IPV4=10.99.97.0/24
-    - SUBSPACE_NETWORK_IPV6=fd00::10:97:0/64
-    - SUBSPACE_IPV6_NAT_ENABLED=1
+    - 'SUBSPACE_HTTP_HOST=subspace.example.org'
+    - 'SUBSPACE_BACKLINK=/'
+    - 'SUBSPACE_LETSENCRYPT=true'
+    - 'SUBSPACE_HTTP_INSECURE=false'
+    - 'SUBSPACE_HTTP_ADDR=:80'
+    - 'SUBSPACE_NAMESERVER=1.1.1.1'
+    - 'SUBSPACE_LISTENPORT=51820'
+    - 'SUBSPACE_ENDPOINT_HOST=you-can-use-another-hostname.subspace.example.com'
+    - 'SUBSPACE_NETWORK_IPV4=10.99.97.0/24'
+    - 'SUBSPACE_NETWORK_IPV6=fd00::10:97:0/64'
+    - 'SUBSPACE_IPV6_NAT_ENABLED=1'
+    - 'SUBSPACE_ENABLE_DNSMASQ=1'
+    - 'SUBSPACE_ALLOWED_IPS=0.0.0.0/0, ::/0'
+    - 'SUBSPACE_THEME=green'
    cap_add:
     - NET_ADMIN
    network_mode: "host"
