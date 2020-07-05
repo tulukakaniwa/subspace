@@ -172,9 +172,9 @@ docker create \
     --cap-add NET_ADMIN \
     --volume /data:/data \
     --env 'SUBSPACE_HTTP_HOST=subspace.example.com' \
-	  # Optional variable to change upstream DNS provider
+      # Optional variable to change upstream DNS provider
     --env 'SUBSPACE_NAMESERVER=1.1.1.1' \
-	  # Optional variable to change WireGuard Listenport
+      # Optional variable to change WireGuard Listenport
     --env 'SUBSPACE_LISTENPORT=51820' \
     # Optinal variable to change the page to set the home button
     --env 'SUBSPACE_BACKLINK=/'
@@ -183,11 +183,11 @@ docker create \
     # Optional variables to change IPv4/v6 prefixes
     --env 'SUBSPACE_NETWORK_IPV4=10.99.97.0/24' \
     --env 'SUBSPACE_NETWORK_IPV6=fd00::10:97:0/64' \
-	# Optional variable to enable or disable IPv6 NAT
+    # Optional variable to enable or disable IPv6 NAT
     --env 'SUBSPACE_IPV6_NAT_ENABLED=1' \
-	# Optional variable to enable or disable dnsmasq
+    # Optional variable to enable or disable dnsmasq
     --env 'SUBSPACE_DNSMASQ_ENABLED=1' \
-  # Optional variable to change the theme color
+    # Optional variable to change the theme color
     --env 'SUBSPACE_THEME=green' \
     subspacecommunity/subspace:latest
 
