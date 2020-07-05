@@ -196,7 +196,7 @@ func main() {
 		logger.Fatal(err)
 	}
 	if msg, err := configureWireguard(); err != nil {
-		logger.Fatalf("%v: \n -- msg -- \n%s", err, msg)
+		logger.Fatalf("err=%v, msg=%s", err, msg)
 	}
 
 	// Secure token
