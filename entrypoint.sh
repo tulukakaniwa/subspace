@@ -43,7 +43,7 @@ if [ -z "${SUBSPACE_ENDPOINT_HOST-}" ]; then
 fi
 
 if [ -z "${SUBSPACE_ALLOWED_IPS-}" ]; then
-  export SUBSPACE_ALLOWED_IPS="" # Use default values defined in subspace command
+  export SUBSPACE_ALLOWED_IPS="0.0.0.0/0, ::/0"
 fi
 
 if [ -z "${SUBSPACE_HTTP_INSECURE-}" ]; then
