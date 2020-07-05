@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+
+	"github.com/coreos/go-iptables/iptables"
 )
 
 var (
@@ -28,75 +30,50 @@ func initWireguardConfig() error {
 }
 
 func configureWireguard() (string, error) {
-
-	type value struct {
-		Nameserver string
-		NetworkIPv4 string
-		IPv6NatEnabled bool
-		NetworkIPv6 string
-		GatewayIPv4 string
-		GatewayIPv6 string
-		GatewayIPv4WithCIDR string
-		GatewayIPv6WithCIDR string
-		DnsmasqEnabled bool
+	var err error
+	iptable, err := iptables.New()
+	if err != nil {
+		return "", err
+	}
+	setupNAT := func(network, gateway string) error {
+		err = iptable.AppendUnique("nat", "POSTROUTING", "-s", network, "-j", "MASQUERADE")
+		if err != nil {
+			return err
+		}
+		err = iptable.AppendUnique("filter", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT")
+		if err != nil {
+			return err
+		}
+		err = iptable.AppendUnique("filter", "FORWARD", "-s", network, "-j", "ACCEPT")
+		if err != nil {
+			return err
+		}
+		// DNS Leak Protection
+		err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "udp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway))
+		if err != nil {
+			return err
+		}
+		err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "tcp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway))
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = setupNAT(networkIPv4, wireguardConfig.gatewayIPv4.String())
+	if err != nil {
+		return "", err
+	}
+	if ipv6NatEnabled {
+		err = setupNAT(networkIPv6, wireguardConfig.gatewayIPv6.String())
+		if err != nil {
+			return "", err
+		}
 	}
 	maskLenIPv4, _ := wireguardConfig.networkIPv4.Mask.Size()
 	maskLenIPv6, _ := wireguardConfig.networkIPv6.Mask.Size()
-	v := value{
-		Nameserver:          nameserver,
-		NetworkIPv4:         networkIPv4,
-		IPv6NatEnabled:      ipv6NatEnabled,
-		NetworkIPv6:         networkIPv6,
-		GatewayIPv4:         wireguardConfig.gatewayIPv4.String(),
-		GatewayIPv6:         wireguardConfig.gatewayIPv6.String(),
-		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv4.String(), maskLenIPv4),
-		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv6.String(), maskLenIPv6),
-		DnsmasqEnabled:      enableDnsmasq,
-	}
 	return bash(`
 # Set DNS server
 echo "nameserver {{.Nameserver}}" > /etc/resolv.conf
-
-# Setup NAT
-
-## IPv4
-if ! /sbin/iptables -t nat --check POSTROUTING -s "{{.NetworkIPv4}}" -j MASQUERADE; then
-  /sbin/iptables -t nat --append POSTROUTING -s "{{.NetworkIPv4}}" -j MASQUERADE
-fi
-if ! /sbin/iptables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; then
-  /sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-fi
-if ! /sbin/iptables --check FORWARD -s "{{.NetworkIPv4}}" -j ACCEPT; then
-  /sbin/iptables --append FORWARD -s "{{.NetworkIPv4}}" -j ACCEPT
-fi
-
-# ipv4 - DNS Leak Protection
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
-fi
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
-fi
-
-{{if .IPv6NatEnabled}}
-## IPv6
-if ! /sbin/ip6tables -t nat --check POSTROUTING -s "{{.NetworkIPv6}}" -j MASQUERADE; then
-  /sbin/ip6tables -t nat --append POSTROUTING -s "{{.NetworkIPv6}}" -j MASQUERADE
-fi
-if ! /sbin/ip6tables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; then
-  /sbin/ip6tables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-fi
-if ! /sbin/ip6tables --check FORWARD -s "{{.NetworkIPv6}}" -j ACCEPT; then
-  /sbin/ip6tables --append FORWARD -s "{{.NetworkIPv6}}" -j ACCEPT
-fi
-# ipv6 - DNS Leak Protection
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
-fi
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
-fi
-{{end}}
 
 # Create wireguard device
 if ip link show wg0 2>/dev/null; then
@@ -104,7 +81,9 @@ if ip link show wg0 2>/dev/null; then
 fi
 ip link add dev wg0 type wireguard
 ip address add dev wg0 "{{.GatewayIPv4WithCIDR}}"
+{{if .IPv6NatEnabled}}
 ip address add dev wg0 "{{.GatewayIPv6WithCIDR}}"
+{{end}}
 wg setconf wg0 /data/wireguard/server.conf
 ip link set up dev wg0
 
@@ -113,5 +92,21 @@ ip link set up dev wg0
 sed -i -e 's/listen-address=.\+$/listen-address=127.0.0.1,{{.GatewayIPv4}},{{.GatewayIPv6}}/g' /etc/dnsmasq.conf
 sv restart dnsmasq
 {{end}}
-`, &v)
+`, struct {
+		Nameserver string
+		IPv6NatEnabled bool
+		GatewayIPv4 string
+		GatewayIPv6 string
+		GatewayIPv4WithCIDR string
+		GatewayIPv6WithCIDR string
+		DnsmasqEnabled bool
+	}{
+		Nameserver:          nameserver,
+		IPv6NatEnabled:      ipv6NatEnabled,
+		GatewayIPv4:         wireguardConfig.gatewayIPv4.String(),
+		GatewayIPv6:         wireguardConfig.gatewayIPv6.String(),
+		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv4.String(), maskLenIPv4),
+		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv6.String(), maskLenIPv6),
+		DnsmasqEnabled:      enableDnsmasq,
+	})
 }
