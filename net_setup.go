@@ -70,6 +70,14 @@ if ! /sbin/iptables --check FORWARD -s "{{.NetworkIPv4}}" -j ACCEPT; then
   /sbin/iptables --append FORWARD -s "{{.NetworkIPv4}}" -j ACCEPT
 fi
 
+# ipv4 - DNS Leak Protection
+if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
+  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
+fi
+if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
+  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
+fi
+
 {{if .IPv6NatEnabled}}
 ## IPv6
 if ! /sbin/ip6tables -t nat --check POSTROUTING -s "{{.NetworkIPv6}}" -j MASQUERADE; then
@@ -81,16 +89,6 @@ fi
 if ! /sbin/ip6tables --check FORWARD -s "{{.NetworkIPv6}}" -j ACCEPT; then
   /sbin/ip6tables --append FORWARD -s "{{.NetworkIPv6}}" -j ACCEPT
 fi
-{{end}}
-
-# ipv4 - DNS Leak Protection
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
-fi
-if ! /sbin/iptables -t nat --check OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"; then
-  /sbin/iptables -t nat --append OUTPUT -s "{{.NetworkIPv4}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv4}}:53"
-fi
-
 # ipv6 - DNS Leak Protection
 if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
   /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p udp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
@@ -98,6 +96,7 @@ fi
 if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"; then
   /sbin/ip6tables --wait -t nat --append OUTPUT -s "{{.NetworkIPv6}}" -p tcp --dport 53 -j DNAT --to "{{.GatewayIPv6}}"
 fi
+{{end}}
 
 # Create wireguard device
 if ip link show wg0 2>/dev/null; then
