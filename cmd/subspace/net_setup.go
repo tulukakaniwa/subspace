@@ -79,7 +79,7 @@ sv restart dnsmasq
 		GatewayIPv6:         wireguardConfig.gatewayIPv6.String(),
 		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv4.String(), maskLenIPv4),
 		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv6.String(), maskLenIPv6),
-		DnsmasqEnabled:      enableDnsmasq,
+		DnsmasqEnabled:      dnsmasqEnabled,
 	})
 }
 

@@ -403,6 +403,16 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
+	ipv4Gw := wireguardConfig.gatewayIPv4.String()
+	ipv6Gw := wireguardConfig.gatewayIPv6.String()
+
+	var clientNameserver string
+	if dnsmasqEnabled {
+		clientNameserver = fmt.Sprintf("%s, %s", ipv4Gw, ipv6Gw)
+	} else {
+		clientNameserver = nameserver
+	}
+
 	script := `
 cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
@@ -419,7 +429,7 @@ WGPEER
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
-DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
+DNS = {{$.Nameserver}}
 Address = {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 
 [Peer]
@@ -439,6 +449,7 @@ WGCLIENT
 		IPv6Addr     string
 		IPv4Cidr     string
 		IPv6Cidr     string
+		Nameserver   string
 		Listenport   uint
 		AllowedIPS   string
 	}{
@@ -451,6 +462,7 @@ WGCLIENT
 		ipv6Addr.String(),
 		wireguardConfig.gatewayIPv4.String(),
 		wireguardConfig.gatewayIPv6.String(),
+		clientNameserver,
 		listenPort,
 		allowedIPs,
 	})
