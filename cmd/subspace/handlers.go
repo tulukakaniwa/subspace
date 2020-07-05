@@ -420,7 +420,7 @@ cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
 DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
-Address = {{$.IPv4Addr}}/{{$.IPv4Cidr}},{{$.IPv6Addr}}/{{$.IPv6Cidr}}
+Address = {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 
 [Peer]
 PublicKey = $(cat server.public)
