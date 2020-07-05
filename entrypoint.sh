@@ -50,6 +50,10 @@ if [ -z "${SUBSPACE_HTTP_INSECURE-}" ]; then
   export SUBSPACE_HTTP_INSECURE="false"
 fi
 
+if [ -z "${SUBSPACE_ENABLE_DNSMASQ-}" ]; then
+  export SUBSPACE_ENABLE_DNSMASQ=1
+fi
+
 if [ -z "${SUBSPACE_THEME-}" ]; then
   export SUBSPACE_THEME="green"
 fi
@@ -84,33 +88,35 @@ ListenPort = ${SUBSPACE_LISTENPORT}
 WGSERVER
 cat /data/wireguard/peers/*.conf >>/data/wireguard/server.conf
 
-# dnsmasq service
-if ! test -d /etc/service/dnsmasq; then
-  cat <<DNSMASQ >/etc/dnsmasq.conf
-    # Only listen on necessary addresses.
-    listen-address=127.0.0.1
+if test "${SUBSPACE_ENABLE_DNSMASQ}" -ne 0; then
+  # dnsmasq service
+  if ! test -d /etc/service/dnsmasq; then
+    cat <<DNSMASQ >/etc/dnsmasq.conf
+      # Only listen on necessary addresses.
+      listen-address=127.0.0.1
 
-    # Never forward plain names (without a dot or domain part)
-    domain-needed
+      # Never forward plain names (without a dot or domain part)
+      domain-needed
 
-    # Never forward addresses in the non-routed address spaces.
-    bogus-priv
+      # Never forward addresses in the non-routed address spaces.
+      bogus-priv
 DNSMASQ
 
-  mkdir -p /etc/service/dnsmasq
-  cat <<RUNIT >/etc/service/dnsmasq/run
-#!/bin/sh
-exec /usr/sbin/dnsmasq --no-daemon
+    mkdir -p /etc/service/dnsmasq
+    cat <<RUNIT >/etc/service/dnsmasq/run
+  #!/bin/sh
+  exec /usr/sbin/dnsmasq --no-daemon
 RUNIT
-  chmod +x /etc/service/dnsmasq/run
+    chmod +x /etc/service/dnsmasq/run
 
-  # dnsmasq service log
-  mkdir -p /etc/service/dnsmasq/log/main
-  cat <<RUNIT >/etc/service/dnsmasq/log/run
-#!/bin/sh
-exec svlogd -tt ./main
+    # dnsmasq service log
+    mkdir -p /etc/service/dnsmasq/log/main
+    cat <<RUNIT >/etc/service/dnsmasq/log/run
+  #!/bin/sh
+  exec svlogd -tt ./main
 RUNIT
-  chmod +x /etc/service/dnsmasq/log/run
+    chmod +x /etc/service/dnsmasq/log/run
+  fi
 fi
 
 # subspace service
@@ -127,7 +133,7 @@ exec /usr/bin/subspace \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
     "--theme=${SUBSPACE_THEME}" \
     "--configure-network=true" \
-    "--enable-dnsmasq=true" \
+    "--enable-dnsmasq=${SUBSPACE_ENABLE_DNSMASQ}" \
     "--nameserver=${SUBSPACE_NAMESERVER}" \
     "--listen-port=${SUBSPACE_LISTENPORT}" \
     "--endpoint-host=${SUBSPACE_ENDPOINT_HOST}" \
