@@ -403,11 +403,6 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	endpoint := endpointHost
-	if endpointHost == "" {
-		endpoint = httpHost
-	}
-
 	script := `
 cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
@@ -448,7 +443,7 @@ WGCLIENT
 		AllowedIPS   string
 	}{
 		profile,
-		endpoint,
+		endpointHost,
 		datadir,
 		wireguardConfig.gatewayIPv4.String(),
 		wireguardConfig.gatewayIPv6.String(),

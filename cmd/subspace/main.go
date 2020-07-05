@@ -162,6 +162,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Default value of endpointHost is the same as httpHost
+	if endpointHost == "" {
+		endpointHost = httpHost
+	}
+
 	// debug logging
 	logger.Out = os.Stdout
 	if debug {
