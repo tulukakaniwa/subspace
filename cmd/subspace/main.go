@@ -197,11 +197,13 @@ func main() {
 	//
 	// Setup wireguard
 	//
-	if err := initWireguardConfig(); err != nil {
-		logger.Fatal(err)
-	}
-	if msg, err := configureWireguard(); err != nil {
-		logger.Fatalf("err=%v, msg=%s", err, msg)
+	if networkConfigurationEnabled {
+		if err := initWireguardConfig(); err != nil {
+			logger.Fatal(err)
+		}
+		if msg, err := configureWireguard(); err != nil {
+			logger.Fatalf("err=%v, msg=%s", err, msg)
+		}
 	}
 
 	// Secure token
