@@ -100,13 +100,13 @@ fi
 
 # Create wireguard device
 if ip link show wg0 2>/dev/null; then
-  ip link del wg0
+  ip link delete wg0
 fi
-ip link add wg0 type wireguard
-ip addr add "{{.GatewayIPv4WithCIDR}}" dev wg0
-ip addr add "{{.GatewayIPv6WithCIDR}}" dev wg0
+ip link add dev wg0 type wireguard
+ip address add dev wg0 "{{.GatewayIPv4WithCIDR}}"
+ip address add dev wg0 "{{.GatewayIPv6WithCIDR}}"
 wg setconf wg0 /data/wireguard/server.conf
-ip link set wg0 up
+ip link set up dev wg0
 
 {{if .DnsmasqEnabled}}
 # Reload dnsmasq
