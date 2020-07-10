@@ -95,26 +95,26 @@ $ subspace --http-host subspace.example.com
 
 #### Command Line Options
 
-| flag                | default             | description                                                                                                               |
-|---------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------|
-| `http-host`         |                     | REQUIRED: The host to listen on and set cookies for                                                                       |
-| `backlink`          | `/`                 | OPTIONAL: The page to set the home button too                                                                             |
-| `datadir`           | `/data`             | OPTIONAL: The directory to store data such as the wireguard configuration files                                           |
-| `debug`             |                     | OPTIONAL: Place subspace into debug mode for verbose log output                                                           |
-| `http-addr`         | `:80`               | OPTIONAL: HTTP listen address                                                                                             |
-| `http-insecure`     |                     | OPTIONAL: enable session cookies for http and remove redirect to https                                                    |
-| `letsencrypt`       | `true`              | OPTIONAL: Whether or not to use a letsencrypt certificate                                                                 |
-| `theme`             | `green`             | OPTIONAL: The theme to use, please refer to [semantic-ui](https://semantic-ui.com/usage/theming.html) for accepted colors |
-| `configure-network` | `false`             | OPTIONAL: If set, `subspace` command configure networks using `iptables` and `ip6tables`.                                 |
-| `enable-dnsmasq`    | `false`             | OPTIONAL: If set, `subspace` command configure and restart `dnsmasq` daemon.                                              |
-| `network-ipv4`      | `10.99.97.0/24`     | OPTIONAL: IPv4 address range to use. Note that the first address is reserved by the server.                               |
-| `network-ipv6`      | `fd00::10:97:0/64`  | OPTIONAL: IPv6 address range to use. Note that the first address is reserved by the server.                               |
-| `endpoint-host`     | same as `http-host` | OPTIONAL: WireGuard device's endpoint hostname.                                                                           |
-| `listenPort`        | `51820`             | OPTIONAL: UDP port number for WireGuard device to listen                                                                  |
-| `enable-ipv6-nat`   | `true`              | OPTIONAL: If this and `configure-network` are enabled, `subspace` configure a NAT for IPv6 network.                       |
-| `allowed-ips`       | `0.0.0.0/0, ::/0`   | `IPv4/v6 CIDR list for client to connect via WireGuard VPN.`                                                              |
-| `version`           |                     | Display version of `subspace` and exit                                                                                    |
-| `help`              |                     | Display help and exit                                                                                                     |
+| flag                | default                          | description                                                                                                               |
+|---------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `http-host`         |                                  | REQUIRED: The host to listen on and set cookies for                                                                       |
+| `backlink`          | `/`                              | OPTIONAL: The page to set the home button too                                                                             |
+| `datadir`           | `/data`                          | OPTIONAL: The directory to store data such as the wireguard configuration files                                           |
+| `debug`             |                                  | OPTIONAL: Place subspace into debug mode for verbose log output                                                           |
+| `http-addr`         | `:80`                            | OPTIONAL: HTTP listen address                                                                                             |
+| `http-insecure`     |                                  | OPTIONAL: enable session cookies for http and remove redirect to https                                                    |
+| `letsencrypt`       | `true`                           | OPTIONAL: Whether or not to use a letsencrypt certificate                                                                 |
+| `theme`             | `green`                          | OPTIONAL: The theme to use, please refer to [semantic-ui](https://semantic-ui.com/usage/theming.html) for accepted colors |
+| `configure-network` | `false`                          | OPTIONAL: If set, `subspace` command configure networks using `iptables` and `ip6tables`.                                 |
+| `enable-dnsmasq`    | `false`                          | OPTIONAL: If set, `subspace` command configure and restart `dnsmasq` daemon.                                              |
+| `network-ipv4`      | `10.99.97.0/24`                  | OPTIONAL: IPv4 address range to use. Note that the first address is reserved by the server.                               |
+| `network-ipv6`      | `fd00::10:97:0/64`               | OPTIONAL: IPv6 address range to use. Note that the first address is reserved by the server.                               |
+| `endpoint-host`     | same as host part of `http-host` | OPTIONAL: WireGuard device's endpoint hostname. It does not include the port part of `http-host`.                         |
+| `listenPort`        | `51820`                          | OPTIONAL: UDP port number for WireGuard device to listen                                                                  |
+| `enable-ipv6-nat`   | `true`                           | OPTIONAL: If this and `configure-network` are enabled, `subspace` configure a NAT for IPv6 network.                       |
+| `allowed-ips`       | `0.0.0.0/0, ::/0`                | OPTIONAL: IPv4/v6 CIDR list for client to connect via WireGuard VPN.                                                      |
+| `version`           |                                  | Display version of `subspace` and exit                                                                                    |
+| `help`              |                                  | Display help and exit                                                                                                     |
 
 ### Run as a Docker container
 
