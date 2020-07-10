@@ -88,25 +88,20 @@ func setupNAT(protocol iptables.Protocol, network, gateway string) error {
 	if err != nil {
 		return err
 	}
-	err = iptable.AppendUnique("nat", "POSTROUTING", "-s", network, "-j", "MASQUERADE")
-	if err != nil {
+	if err = iptable.AppendUnique("nat", "POSTROUTING", "-s", network, "-j", "MASQUERADE"); err != nil {
 		return err
 	}
-	err = iptable.AppendUnique("filter", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT")
-	if err != nil {
+	if err = iptable.AppendUnique("filter", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
 		return err
 	}
-	err = iptable.AppendUnique("filter", "FORWARD", "-s", network, "-j", "ACCEPT")
-	if err != nil {
+	if err = iptable.AppendUnique("filter", "FORWARD", "-s", network, "-j", "ACCEPT"); err != nil {
 		return err
 	}
 	// DNS Leak Protection
-	err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "udp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway))
-	if err != nil {
+	if err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "udp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway)); err != nil {
 		return err
 	}
-	err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "tcp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway))
-	if err != nil {
+	if err = iptable.AppendUnique("nat", "OUTPUT", "-s", network, "-p", "tcp", "--dport", "53", "-j", "DNAT", "--to", fmt.Sprintf("%s:53", gateway)); err != nil {
 		return err
 	}
 	return nil
