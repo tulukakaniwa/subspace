@@ -1,8 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
+)
+
+var (
+	kErrIPLimitExceeds = errors.New("num of devices exceeds the limit of IP addr pool")
 )
 
 func cloneIP(ip net.IP) net.IP {
@@ -35,10 +40,10 @@ func generateIPAddr(v4Net *net.IPNet, v6Net *net.IPNet, id uint32) (net.IP, net.
 		v6[pos6+1] += byte(hexId & 0xff)
 	}
 	if !v4Net.Contains(v4) || v4.Equal(net.IPv4(0xff, 0xff, 0xff, 0xff).Mask(v4Net.Mask)) {
-		return nil, nil, fmt.Errorf("num of devices exceeds the limit of IP addr pool")
+		return nil, nil, kErrIPLimitExceeds
 	}
 	if !v6Net.Contains(v6) || !(v6.IsGlobalUnicast() || v6.IsLinkLocalUnicast()) {
-		return nil, nil, fmt.Errorf("num of devices exceeds the limit of IP addr pool")
+		return nil, nil, kErrIPLimitExceeds
 	}
 	return v4, v6, nil
 }
