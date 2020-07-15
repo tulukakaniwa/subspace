@@ -8,41 +8,48 @@ import (
 )
 
 var (
-	wireguardConfig struct {
-		gatewayIPv4 net.IP
-		gatewayIPv6 net.IP
-		networkIPv4 *net.IPNet
-		networkIPv6 *net.IPNet
-	}
+	wgConfig *wireguardConfig
 )
 
+type wireguardConfig struct {
+	gatewayIPv4 net.IP
+	gatewayIPv6 net.IP
+	networkIPv4 *net.IPNet
+	networkIPv6 *net.IPNet
+}
+
 func initWireguardConfig() error {
-	var err error
-	wireguardConfig.gatewayIPv4, wireguardConfig.networkIPv4, err = calcDefaultGateway(networkIPv4)
+	gatewayIPv4, networkIPv4, err := calcDefaultGateway(networkIPv4)
 	if err != nil {
 		return err
 	}
-	wireguardConfig.gatewayIPv6, wireguardConfig.networkIPv6, err = calcDefaultGateway(networkIPv6)
+	gatewayIPv6, networkIPv6, err := calcDefaultGateway(networkIPv6)
 	if err != nil {
 		return err
+	}
+	wgConfig = &wireguardConfig{
+		gatewayIPv4: gatewayIPv4,
+		networkIPv4: networkIPv4,
+		gatewayIPv6: gatewayIPv6,
+		networkIPv6: networkIPv6,
 	}
 	return nil
 }
 
-func configureWireguard() (string, error) {
+func (conf *wireguardConfig) configureWireguard() (string, error) {
 	var err error
-	err = setupNAT(iptables.ProtocolIPv4, networkIPv4, wireguardConfig.gatewayIPv4.String())
+	err = conf.configureNAT(iptables.ProtocolIPv4, networkIPv4, conf.gatewayIPv4.String())
 	if err != nil {
 		return "", err
 	}
 	if ipv6NatEnabled {
-		err = setupNAT(iptables.ProtocolIPv6, networkIPv6, wireguardConfig.gatewayIPv6.String())
+		err = conf.configureNAT(iptables.ProtocolIPv6, networkIPv6, conf.gatewayIPv6.String())
 		if err != nil {
 			return "", err
 		}
 	}
-	maskLenIPv4, _ := wireguardConfig.networkIPv4.Mask.Size()
-	maskLenIPv6, _ := wireguardConfig.networkIPv6.Mask.Size()
+	maskLenIPv4, _ := conf.networkIPv4.Mask.Size()
+	maskLenIPv6, _ := conf.networkIPv6.Mask.Size()
 	return bash(`
 # Set DNS server
 echo "nameserver {{.Nameserver}}" > /etc/resolv.conf
@@ -75,15 +82,15 @@ sv restart dnsmasq
 	}{
 		Nameserver:          nameserver,
 		IPv6NatEnabled:      ipv6NatEnabled,
-		GatewayIPv4:         wireguardConfig.gatewayIPv4.String(),
-		GatewayIPv6:         wireguardConfig.gatewayIPv6.String(),
-		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv4.String(), maskLenIPv4),
-		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", wireguardConfig.gatewayIPv6.String(), maskLenIPv6),
+		GatewayIPv4:         conf.gatewayIPv4.String(),
+		GatewayIPv6:         conf.gatewayIPv6.String(),
+		GatewayIPv4WithCIDR: fmt.Sprintf("%s/%d", conf.gatewayIPv4.String(), maskLenIPv4),
+		GatewayIPv6WithCIDR: fmt.Sprintf("%s/%d", conf.gatewayIPv6.String(), maskLenIPv6),
 		DnsmasqEnabled:      dnsmasqEnabled,
 	})
 }
 
-func setupNAT(protocol iptables.Protocol, network, gateway string) error {
+func (conf *wireguardConfig) configureNAT(protocol iptables.Protocol, network, gateway string) error {
 	iptable, err := iptables.NewWithProtocol(protocol)
 	if err != nil {
 		return err
@@ -105,4 +112,8 @@ func setupNAT(protocol iptables.Protocol, network, gateway string) error {
 		return err
 	}
 	return nil
+}
+
+func (conf *wireguardConfig) generateIPAddr(id uint32) (net.IP, net.IP, error) {
+	return generateIPAddr(conf.networkIPv4, conf.networkIPv6, id)
 }

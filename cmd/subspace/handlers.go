@@ -384,7 +384,7 @@ func profileAddHandler(w *Web) {
 	}
 
 	// Check whether there is a room to assign new IP address or not.
-	if _, _, err := generateIPAddr(wireguardConfig.networkIPv4, wireguardConfig.networkIPv6, uint32(len(config.ListProfiles()))); err != nil {
+	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
@@ -396,15 +396,17 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Addr, ipv6Addr, err := generateIPAddr(wireguardConfig.networkIPv4, wireguardConfig.networkIPv6, uint32(profile.Number))
+	ipv4Addr, ipv6Addr, err := wgConfig.generateIPAddr(uint32(profile.Number))
 	if err != nil {
 		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
 		w.Redirect("/?error=addprofile")
 		return
 	}
 
-	ipv4Gw := wireguardConfig.gatewayIPv4.String()
-	ipv6Gw := wireguardConfig.gatewayIPv6.String()
+	ipv4Gw := wgConfig.gatewayIPv4.String()
+	ipv6Gw := wgConfig.gatewayIPv6.String()
+	ipv4CIDR := wgConfig.networkIPv4.String()
+	ipv6CIDR := wgConfig.networkIPv4.String()
 
 	var clientNameserver string
 	if dnsmasqEnabled {
@@ -456,12 +458,12 @@ WGCLIENT
 		profile,
 		endpointHost,
 		datadir,
-		wireguardConfig.gatewayIPv4.String(),
-		wireguardConfig.gatewayIPv6.String(),
+		ipv4Gw,
+		ipv6Gw,
 		ipv4Addr.String(),
 		ipv6Addr.String(),
-		wireguardConfig.gatewayIPv4.String(),
-		wireguardConfig.gatewayIPv6.String(),
+		ipv4CIDR,
+		ipv6CIDR,
 		clientNameserver,
 		listenPort,
 		allowedIPs,

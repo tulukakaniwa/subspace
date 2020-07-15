@@ -206,8 +206,8 @@ func main() {
 		if err := initWireguardConfig(); err != nil {
 			logger.Fatal(err)
 		}
-		if msg, err := configureWireguard(); err != nil {
-			logger.Fatalf("err=%v, msg=%s", err, msg)
+		if msg, err := wgConfig.configureWireguard(); err != nil {
+			logger.Fatalf("configuring Wireguard failed: err=%v, msg=%s", err, msg)
 		}
 	}
 
