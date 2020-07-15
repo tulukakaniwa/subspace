@@ -382,7 +382,13 @@ func profileAddHandler(w *Web) {
 	} else {
 		userID = w.User.ID
 	}
-	
+
+	// Check whether there is a room to assign new IP address or not.
+	if _, _, err := generateIPAddr(wireguardConfig.networkIPv4, wireguardConfig.networkIPv6, uint32(len(config.ListProfiles()))); err != nil {
+		w.Redirect("/?error=addprofile")
+		return
+	}
+
 	profile, err := config.AddProfile(userID, name, platform)
 	if err != nil {
 		logger.Warn(err)
