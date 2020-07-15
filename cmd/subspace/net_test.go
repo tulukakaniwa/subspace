@@ -34,43 +34,27 @@ func TestGenerateIPAddr(t *testing.T) {
 
 }
 
-func TestCalcDefaultGatewayV6(t *testing.T) {
+func testCalcDefaultGateway(t *testing.T, validCIDR, expectedGateway string, invalidCIDR string) {
 	{
-		cidr := "fe80:1234:1234:1234::/64"
-		gw := "fe80:1234:1234:1234::1"
-		ip, network, err := calcDefaultGateway(cidr)
+		ip, network, err := calcDefaultGateway(validCIDR)
 		if err != nil {
 			t.Error(err)
 		}
-		if !ip.Equal(net.ParseIP(gw)) {
-			t.Errorf("Default gateway of %s must be %s, but got %s (in %s)", cidr, gw, ip.String(), network.String())
+		if !ip.Equal(net.ParseIP(expectedGateway)) {
+			t.Errorf("Default gateway of %s must be %s, but got %s (in %s)", validCIDR, expectedGateway, ip.String(), network.String())
 		}
 	}
 	{
-		cidr := "fe80:1234:1234:1234::/128"
-		ip, network, err := calcDefaultGateway(cidr)
-		if err == nil {
-			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
+		if ip, network, err := calcDefaultGateway(invalidCIDR); err == nil {
+			t.Errorf("There should not be default GW for %s, but got %s(in %s)", invalidCIDR, ip.String(), network.String())
 		}
 	}
+
+}
+
+func TestCalcDefaultGatewayV6(t *testing.T) {
+	testCalcDefaultGateway(t, "fe80:1234:1234:1234::/64", "fe80:1234:1234:1234::1", "fe80:1234:1234:1234::/128")
 }
 func TestCalcDefaultGatewayV4(t *testing.T) {
-	{
-		cidr := "127.168.128.0/18"
-		gw := "127.168.128.1"
-		ip, network, err := calcDefaultGateway(cidr)
-		if err != nil {
-			t.Error(err)
-		}
-		if !ip.Equal(net.ParseIP(gw)) {
-			t.Errorf("Default gateway of %s must be %s, but got %s (in %s)", cidr, gw, ip.String(), network.String())
-		}
-	}
-	{
-		cidr := "127.168.128.0/32"
-		ip, network, err := calcDefaultGateway(cidr)
-		if err == nil {
-			t.Errorf("There should not be default GW for %s, but got %s(in %s)", cidr, ip.String(), network.String())
-		}
-	}
+	testCalcDefaultGateway(t, "127.168.128.0/18", "127.168.128.1", "127.168.128.0/32")
 }
