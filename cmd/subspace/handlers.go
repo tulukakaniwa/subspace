@@ -382,12 +382,7 @@ func profileAddHandler(w *Web) {
 	} else {
 		userID = w.User.ID
 	}
-
-	if len(config.ListProfiles()) >= maxProfiles {
-		w.Redirect("/?error=addprofile")
-		return
-	}
-
+	
 	profile, err := config.AddProfile(userID, name, platform)
 	if err != nil {
 		logger.Warn(err)
