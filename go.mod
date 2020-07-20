@@ -3,6 +3,7 @@ module github.com/subspacecommunity/subspace
 go 1.14
 
 require (
+	github.com/coreos/go-iptables v0.4.5
 	github.com/crewjam/saml v0.3.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gorilla/securecookie v1.1.1

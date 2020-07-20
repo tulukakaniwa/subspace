@@ -21,15 +21,7 @@ var (
 	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
 	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
-	maxProfiles        = 250
 )
-
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
 
 func ssoHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if token := samlSP.GetAuthorizationToken(r); token != nil {
@@ -391,7 +383,8 @@ func profileAddHandler(w *Web) {
 		userID = w.User.ID
 	}
 
-	if len(config.ListProfiles()) >= maxProfiles {
+	// Check whether there is a room to assign new IP address or not.
+	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
@@ -403,41 +396,23 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Pref := "10.99.97."
-	if pref := getEnv("SUBSPACE_IPV4_PREF", "nil"); pref != "nil" {
-		ipv4Pref = pref
+	ipv4Addr, ipv6Addr, err := wgConfig.generateIPAddr(uint32(profile.Number))
+	if err != nil {
+		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
+		w.Redirect("/?error=addprofile")
+		return
 	}
-	ipv4Gw := "10.99.97.1"
-	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
-		ipv4Gw = gw
-	}
-	ipv4Cidr := "24"
-	if cidr := getEnv("SUBSPACE_IPV4_CIDR", "nil"); cidr != "nil" {
-		ipv4Cidr = cidr
-	}
-	ipv6Pref := "fd00::10:97:"
-	if pref := getEnv("SUBSPACE_IPV6_PREF", "nil"); pref != "nil" {
-		ipv6Pref = pref
-	}
-	ipv6Gw := "fd00::10:97:1"
-	if gw := getEnv("SUBSPACE_IPV6_GW", "nil"); gw != "nil" {
-		ipv6Gw = gw
-	}
-	ipv6Cidr := "64"
-	if cidr := getEnv("SUBSPACE_IPV6_CIDR", "nil"); cidr != "nil" {
-		ipv6Cidr = cidr
-	}
-	listenport := "51820"
-	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
-		listenport = port
-	}
-	endpointHost := httpHost
-	if eh := getEnv("SUBSPACE_ENDPOINT_HOST", "nil"); eh != "nil" {
-		endpointHost = eh
-	}
-	allowedips := "0.0.0.0/0, ::/0"
-	if ips := getEnv("SUBSPACE_ALLOWED_IPS", "nil"); ips != "nil" {
-		allowedips = ips
+
+	ipv4Gw := wgConfig.gatewayIPv4.String()
+	ipv6Gw := wgConfig.gatewayIPv6.String()
+	ipv4CIDR := wgConfig.networkIPv4.String()
+	ipv6CIDR := wgConfig.networkIPv4.String()
+
+	var clientNameserver string
+	if dnsmasqEnabled {
+		clientNameserver = fmt.Sprintf("%s, %s", ipv4Gw, ipv6Gw)
+	} else {
+		clientNameserver = nameserver
 	}
 
 	script := `
@@ -445,19 +420,19 @@ cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 
 cat <<WGPEER >peers/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
-AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+AllowedIPs = {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 WGPEER
 
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
-DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
-Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}
+DNS = {{$.Nameserver}}
+Address = {{$.IPv4Addr}}/32,{{$.IPv6Addr}}/128
 
 [Peer]
 PublicKey = $(cat server.public)
@@ -472,11 +447,12 @@ WGCLIENT
 		Datadir      string
 		IPv4Gw       string
 		IPv6Gw       string
-		IPv4Pref     string
-		IPv6Pref     string
+		IPv4Addr     string
+		IPv6Addr     string
 		IPv4Cidr     string
 		IPv6Cidr     string
-		Listenport   string
+		Nameserver   string
+		Listenport   uint
 		AllowedIPS   string
 	}{
 		profile,
@@ -484,12 +460,13 @@ WGCLIENT
 		datadir,
 		ipv4Gw,
 		ipv6Gw,
-		ipv4Pref,
-		ipv6Pref,
-		ipv4Cidr,
-		ipv6Cidr,
-		listenport,
-		allowedips,
+		ipv4Addr.String(),
+		ipv6Addr.String(),
+		ipv4CIDR,
+		ipv6CIDR,
+		clientNameserver,
+		listenPort,
+		allowedIPs,
 	})
 	if err != nil {
 		logger.Warn(err)

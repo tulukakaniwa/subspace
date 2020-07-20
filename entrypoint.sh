@@ -14,12 +14,14 @@ if [ -z "${SUBSPACE_BACKLINK-}" ]; then
   export SUBSPACE_BACKLINK="/"
 fi
 
-if [ -z "${SUBSPACE_IPV4_POOL-}" ]; then
-  export SUBSPACE_IPV4_POOL="10.99.97.0/24"
+if [ -z "${SUBSPACE_NETWORK_IPV4-}" ]; then
+  export SUBSPACE_NETWORK_IPV4="10.99.97.0/24"
 fi
-if [ -z "${SUBSPACE_IPV6_POOL-}" ]; then
-  export SUBSPACE_IPV6_POOL="fd00::10:97:0/112"
+
+if [ -z "${SUBSPACE_NETWORK_IPV6-}" ]; then
+  export SUBSPACE_NETWORK_IPV6="fd00::10:97:0/64"
 fi
+
 if [ -z "${SUBSPACE_NAMESERVER-}" ]; then
   export SUBSPACE_NAMESERVER="1.1.1.1"
 fi
@@ -36,8 +38,20 @@ if [ -z "${SUBSPACE_LISTENPORT-}" ]; then
   export SUBSPACE_LISTENPORT="51820"
 fi
 
+if [ -z "${SUBSPACE_ENDPOINT_HOST-}" ]; then
+  export SUBSPACE_ENDPOINT_HOST="" # Use default values defined in subspace command
+fi
+
+if [ -z "${SUBSPACE_ALLOWED_IPS-}" ]; then
+  export SUBSPACE_ALLOWED_IPS="0.0.0.0/0, ::/0"
+fi
+
 if [ -z "${SUBSPACE_HTTP_INSECURE-}" ]; then
   export SUBSPACE_HTTP_INSECURE="false"
+fi
+
+if [ -z "${SUBSPACE_ENABLE_DNSMASQ-}" ]; then
+  export SUBSPACE_ENABLE_DNSMASQ=1
 fi
 
 if [ -z "${SUBSPACE_THEME-}" ]; then
@@ -46,72 +60,12 @@ fi
 
 export DEBIAN_FRONTEND="noninteractive"
 
-if [ -z "${SUBSPACE_IPV4_GW-}" ]; then
-  export SUBSPACE_IPV4_PREF=$(echo ${SUBSPACE_IPV4_POOL-} | cut -d '/' -f1 | sed 's/.0$/./g')
-  export SUBSPACE_IPV4_GW=$(echo ${SUBSPACE_IPV4_PREF-}1)
-
-fi
-if [ -z "${SUBSPACE_IPV6_GW-}" ]; then
-  export SUBSPACE_IPV6_PREF=$(echo ${SUBSPACE_IPV6_POOL-} | cut -d '/' -f1 | sed 's/:0$/:/g')
-  export SUBSPACE_IPV6_GW=$(echo ${SUBSPACE_IPV6_PREF-}1)
-fi
-
 if [ -z "${SUBSPACE_IPV6_NAT_ENABLED-}" ]; then
   export SUBSPACE_IPV6_NAT_ENABLED=1
 fi
 
-# Set DNS server
-echo "nameserver ${SUBSPACE_NAMESERVER}" >/etc/resolv.conf
-
-if [ -z "${SUBSPACE_DISABLE_MASQUERADE-}" ]; then
-  # IPv4
-  if ! /sbin/iptables -t nat --check POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE; then
-    /sbin/iptables -t nat --append POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE
-  fi
-
-  if ! /sbin/iptables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; then
-    /sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  fi
-
-  if ! /sbin/iptables --check FORWARD -s ${SUBSPACE_IPV4_POOL} -j ACCEPT; then
-    /sbin/iptables --append FORWARD -s ${SUBSPACE_IPV4_POOL} -j ACCEPT
-  fi
-
-  if [[ ${SUBSPACE_IPV6_NAT_ENABLED-} -gt 0 ]]; then
-    # IPv6
-    if ! /sbin/ip6tables -t nat --check POSTROUTING -s ${SUBSPACE_IPV6_POOL} -j MASQUERADE; then
-      /sbin/ip6tables -t nat --append POSTROUTING -s ${SUBSPACE_IPV6_POOL} -j MASQUERADE
-    fi
-
-    if ! /sbin/ip6tables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; then
-      /sbin/ip6tables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-    fi
-
-    if ! /sbin/ip6tables --check FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT; then
-      /sbin/ip6tables --append FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT
-    fi
-  fi
-fi
-
-# ipv4 - DNS Leak Protection
-if ! /sbin/iptables -t nat --check OUTPUT -s ${SUBSPACE_IPV4_POOL} -p udp --dport 53 -j DNAT --to ${SUBSPACE_IPV4_GW}:53; then
-  /sbin/iptables -t nat --append OUTPUT -s ${SUBSPACE_IPV4_POOL} -p udp --dport 53 -j DNAT --to ${SUBSPACE_IPV4_GW}:53
-fi
-
-if ! /sbin/iptables -t nat --check OUTPUT -s ${SUBSPACE_IPV4_POOL} -p tcp --dport 53 -j DNAT --to ${SUBSPACE_IPV4_GW}:53; then
-  /sbin/iptables -t nat --append OUTPUT -s ${SUBSPACE_IPV4_POOL} -p tcp --dport 53 -j DNAT --to ${SUBSPACE_IPV4_GW}:53
-fi
-
-# ipv6 - DNS Leak Protection
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s ${SUBSPACE_IPV6_POOL} -p udp --dport 53 -j DNAT --to ${SUBSPACE_IPV6_GW}; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s ${SUBSPACE_IPV6_POOL} -p udp --dport 53 -j DNAT --to ${SUBSPACE_IPV6_GW}
-fi
-
-if ! /sbin/ip6tables --wait -t nat --check OUTPUT -s ${SUBSPACE_IPV6_POOL} -p tcp --dport 53 -j DNAT --to ${SUBSPACE_IPV6_GW}; then
-  /sbin/ip6tables --wait -t nat --append OUTPUT -s ${SUBSPACE_IPV6_POOL} -p tcp --dport 53 -j DNAT --to ${SUBSPACE_IPV6_GW}
-fi
 #
-# WireGuard (${SUBSPACE_IPV4_POOL})
+# WireGuard (${SUBSPACE_NETWORK_IPV4})
 #
 if ! test -d /data/wireguard; then
   mkdir /data/wireguard
@@ -134,22 +88,13 @@ ListenPort = ${SUBSPACE_LISTENPORT}
 WGSERVER
 cat /data/wireguard/peers/*.conf >>/data/wireguard/server.conf
 
-if ip link show wg0 2>/dev/null; then
-  ip link del wg0
-fi
-ip link add wg0 type wireguard
-export SUBSPACE_IPV4_CIDR=$(echo ${SUBSPACE_IPV4_POOL-} | cut -d '/' -f2)
-ip addr add ${SUBSPACE_IPV4_GW}/${SUBSPACE_IPV4_CIDR} dev wg0
-export SUBSPACE_IPV6_CIDR=$(echo ${SUBSPACE_IPV6_POOL-} | cut -d '/' -f2)
-ip addr add ${SUBSPACE_IPV6_GW}/${SUBSPACE_IPV6_CIDR} dev wg0
-wg setconf wg0 /data/wireguard/server.conf
-ip link set wg0 up
+if test "${SUBSPACE_ENABLE_DNSMASQ}" -ne 0; then
 
 # dnsmasq service
 if ! test -d /etc/service/dnsmasq; then
   cat <<DNSMASQ >/etc/dnsmasq.conf
     # Only listen on necessary addresses.
-    listen-address=127.0.0.1,${SUBSPACE_IPV4_GW},${SUBSPACE_IPV6_GW}
+    listen-address=127.0.0.1
 
     # Never forward plain names (without a dot or domain part)
     domain-needed
@@ -174,6 +119,8 @@ RUNIT
   chmod +x /etc/service/dnsmasq/log/run
 fi
 
+fi
+
 # subspace service
 if ! test -d /etc/service/subspace; then
   mkdir /etc/service/subspace
@@ -186,7 +133,16 @@ exec /usr/bin/subspace \
     "--http-insecure=${SUBSPACE_HTTP_INSECURE}" \
     "--backlink=${SUBSPACE_BACKLINK}" \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
-    "--theme=${SUBSPACE_THEME}"
+    "--theme=${SUBSPACE_THEME}" \
+    "--configure-network=true" \
+    "--enable-dnsmasq=${SUBSPACE_ENABLE_DNSMASQ}" \
+    "--nameserver=${SUBSPACE_NAMESERVER}" \
+    "--listen-port=${SUBSPACE_LISTENPORT}" \
+    "--endpoint-host=${SUBSPACE_ENDPOINT_HOST}" \
+    "--network-ipv4=${SUBSPACE_NETWORK_IPV4}" \
+    "--network-ipv6=${SUBSPACE_NETWORK_IPV6}" \
+    "--allowed-ips=${SUBSPACE_ALLOWED_IPS}" \
+    "--enable-ipv6-nat=${SUBSPACE_IPV6_NAT_ENABLED}"
 RUNIT
   chmod +x /etc/service/subspace/run
 
@@ -200,4 +156,4 @@ RUNIT
   chmod +x /etc/service/subspace/log/run
 fi
 
-exec $@
+exec "$@"

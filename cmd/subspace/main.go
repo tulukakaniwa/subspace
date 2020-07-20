@@ -83,6 +83,33 @@ var (
 
 	// Totp
 	tempTotpKey *otp.Key
+
+	// Enable network configuration by subspace
+	networkConfigurationEnabled bool
+
+	// Enable dnsmasq
+	dnsmasqEnabled bool
+
+	// Nameserver
+	nameserver string
+
+	// IPV4 CIDR
+	networkIPv4 string
+
+	// IPV6 CIDR
+	networkIPv6 string
+
+	// Wireguard's endpoint hostname
+	endpointHost string
+
+	// Listen port
+	listenPort uint
+
+	// Use IPv6 NAT
+	ipv6NatEnabled bool
+
+	// Allowd IP list
+	allowedIPs string
 )
 
 func init() {
@@ -96,6 +123,15 @@ func init() {
 	cli.BoolVar(&showHelp, "help", false, "display help and exit")
 	cli.BoolVar(&debug, "debug", false, "debug mode")
 	cli.StringVar(&semanticTheme, "theme", "green", "Semantic-ui theme to use")
+	cli.BoolVar(&networkConfigurationEnabled, "configure-network", true, "Configure networks automatically by subspace")
+	cli.BoolVar(&dnsmasqEnabled, "enable-dnsmasq", false, "Use dnsmasq")
+	cli.StringVar(&nameserver, "nameserver", "1.1.1.1", "DNS server used by clients")
+	cli.StringVar(&networkIPv4, "network-ipv4", "10.99.97.0/24", "IPV4 network address to create. First one is reserved by server.")
+	cli.StringVar(&networkIPv6, "network-ipv6", "fd00::10:97:0/64", "IPV6 network address to create. First one is reserved by server.")
+	cli.StringVar(&endpointHost, "endpoint-host", "", "WireGuard  device's endpoint hostname. By default, host part of http-host is used.")
+	cli.UintVar(&listenPort, "listen-port", 51820, "UDP port number for WireGuard device to listen")
+	cli.BoolVar(&ipv6NatEnabled, "enable-ipv6-nat", true, "Use IPv6 NAT feature or not")
+	cli.StringVar(&allowedIPs, "allowed-ips", "0.0.0.0/0, ::/0", "IPv4/v6 CIDR list for client to connect via WireGuard VPN.")
 }
 
 func main() {
@@ -126,6 +162,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Default value of endpointHost is the same as host part of httpHost
+	if endpointHost == "" {
+		// Strip port number if httpHost contains port number.
+		httpHostname, _, err := net.SplitHostPort(httpHost)
+		if err != nil {
+			httpHostname = httpHost
+		}
+		endpointHost = httpHostname
+	}
+
 	// debug logging
 	logger.Out = os.Stdout
 	if debug {
@@ -152,6 +198,17 @@ func main() {
 	err = config.GenerateTOTP()
 	if err != nil {
 		logger.Fatal(err)
+	}
+	//
+	// Setup wireguard
+	//
+	if err := initWireguardConfig(); err != nil {
+		logger.Fatal(err)
+	}
+	if networkConfigurationEnabled {
+		if msg, err := wgConfig.configureWireguard(); err != nil {
+			logger.Fatalf("configuring Wireguard failed: err=%v, msg=%s", err, msg)
+		}
 	}
 
 	// Secure token

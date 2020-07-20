@@ -15,8 +15,8 @@
 vendor/
 
 # Subspace
-subspace
-bindata.go
+/subspace
+/cmd/subspace/bindata.go
 
 # User Specific
 .vscode/
