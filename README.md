@@ -60,6 +60,16 @@ Join the slack community over at the [gophers](https://invite.slack.golangbridge
 
 See the [CONTRIBUTING](https://raw.githubusercontent.com/subspacecommunity/subspace/master/.github/CONTRIBUTING.md) page for additional info.
 
+## Run Subspace on a VPS
+
+Running Subspace on a VPS is designed to be as simple as possible.
+
+  * Public Docker image.
+  * Single static Go binary with assets bundled.
+  * Automatic TLS using Let's Encrypt.
+  * Redirects http to https.
+  * Works with a reverse proxy or standalone.
+
 ## Setup
 
 ### 1. Get a server
@@ -170,6 +180,7 @@ docker create \
     --restart always \
     --network host \
     --cap-add NET_ADMIN \
+    --volume /usr/bin/wg:/usr/bin/wg \
     --volume /data:/data \
     --env 'SUBSPACE_HTTP_HOST=subspace.example.com' \
       # Optional variable to change upstream DNS provider
